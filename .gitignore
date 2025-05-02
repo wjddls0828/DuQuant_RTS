@@ -13,7 +13,6 @@ output
 cache/
 checkpoints/
 huggingface/
-log/
 dcgm/
 act_scales/
 act_shifts/
