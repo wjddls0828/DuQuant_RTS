@@ -98,7 +98,7 @@ def evaluate(lm, args, logger):
         for dataset in ["wikitext2", 'c4']:
             cache_testloader = f'{args.cache_dir}/testloader_{args.model_family}_{dataset}_all.cache'
             if os.path.exists(cache_testloader):
-                testloader = torch.load(cache_testloader)
+                testloader = torch.load(cache_testloader, weights_only=False)
                 logger.info(f"load calibration from {cache_testloader}")
             else:
                 dataloader, testloader = get_loaders(
@@ -195,6 +195,10 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser()
+
+    parser.add_argument("--rts", type=float, default=0.0, help="RTS scale factor for activation quantization")
+    parser.add_argument("--my_file_name", type=str, default="my_file", help="filename")
+
     parser.add_argument("--model", type=str, help="model name of model path")
     parser.add_argument("--cache_dir", default="./cache", type=str, help="cache dir of dataset, leading to faster debug")
     parser.add_argument("--output_dir", default="./log/", type=str, help="direction of logging file")
@@ -334,7 +338,7 @@ def main():
     if args.save_dir:
         Path(args.save_dir).mkdir(parents=True, exist_ok=True)
     output_dir = Path(args.output_dir)
-    logger = utils.create_logger(output_dir)
+    logger = utils.create_logger(output_dir, args.my_file_name)
     logger.info(args)
     
     # load model
@@ -362,6 +366,7 @@ def main():
         "block_size": args.block_size,
         "max_rotation_step": args.max_rotation_step,
         "permutation_times": args.permutation_times,
+        "rts": 0.0,
     }
     args.act_quant_params = {
         "n_bits":  args.abits,
@@ -374,6 +379,7 @@ def main():
         "block_size": args.block_size,
         "max_rotation_step": args.max_rotation_step,
         "permutation_times": args.permutation_times,
+        "rts": args.rts,
     }
     args.q_quant_params = {
         "n_bits": args.abits,
@@ -383,6 +389,7 @@ def main():
         "quant_method": args.quant_method,
         "block_size": args.block_size,
         "max_rotation_step": args.max_rotation_step,
+        "rts": args.rts,
     }
     args.k_quant_params = {
         "n_bits": args.abits,
@@ -391,16 +398,19 @@ def main():
         "dynamic_method": args.a_dynamic_method,
         "quant_method": args.quant_method,
         "block_size": args.block_size,
+        "rts": 0.0,
     }
     args.v_quant_params = {
         "n_bits": args.abits,
         "per_channel_axes": [],
         "symmetric": False,
         "dynamic_method": args.a_dynamic_method,
+        "rts": 0.0,
     }
     args.p_quant_params = {
         "n_bits": 16,
         "metric": "fix0to1",
+        "rts": args.rts,
     }
     if args.multigpu:
         gpu_id = get_lowest_occupied_gpu(wait_memory=5000)
@@ -420,7 +430,7 @@ def main():
         # load calibration dataset
         cache_dataloader = f'{args.cache_dir}/dataloader_{args.model_family}_{args.calib_dataset}_{args.nsamples}.cache'
         if os.path.exists(cache_dataloader):
-            dataloader = torch.load(cache_dataloader)
+            dataloader = torch.load(cache_dataloader, weights_only=False)
             logger.info(f"load calibration from {cache_dataloader}")
         else:
             dataloader, _ = get_loaders(

@@ -16,7 +16,34 @@ def round_ste(x: torch.Tensor):
     """
     return (x.round() - x).detach() + x
 
+def rts_scale(x, scale, rts):
+    qlev = scale
+    xlen = torch.norm(x, p=2, dim=-1, keepdim=True)
+    s = qlev / xlen
+    unitx = s * x
+    x += unitx * rts
 
+    xf = torch.floor(x / scale) * scale
+    xc = torch.ceil(x / scale) * scale
+
+    l2 = torch.sum(x*x, dim=-1, keepdim=True) - x*x
+    lf2 = l2 + xf*xf
+    lc2 = l2 + xc*xc
+
+    lenf = torch.sqrt(lf2)
+    lenc = torch.sqrt(lc2)
+
+    xsim = torch.where((lenf/(lenf+lenc)) > ((x-xf)/scale), xf, xc)
+
+    for i in range(5):
+        l2 = torch.sum(xsim*xsim, dim=-1, keepdim=True) - xsim*xsim
+        lf2 = l2 + xf*xf
+        lc2 = l2 + xc*xc
+        lenf = torch.sqrt(lf2)
+        lenc = torch.sqrt(lc2)
+        xsim = torch.where((lenf/(lenf+lenc)) > ((x-xf)/scale), xf, xc)
+
+    return xsim
 
 class UniformAffineQuantizer(nn.Module):
     def __init__(
@@ -38,6 +65,7 @@ class UniformAffineQuantizer(nn.Module):
         rotate=True,
         max_rotation_step=1024,
         permutation_times=1,
+        rts=0.0,
     ):
         """
         support cluster quantize
@@ -67,6 +95,7 @@ class UniformAffineQuantizer(nn.Module):
         self.rotate = rotate
         self.max_rotation_step = max_rotation_step
         self.quant_method = quant_method
+        self.rts = rts
         
 
         init_value = 4.             # init value of learnable weight clipping
@@ -122,7 +151,11 @@ class UniformAffineQuantizer(nn.Module):
             assert len(x.shape)==2, "only support linear layer now"
             dim1, dim2 = x.shape
             x = x.reshape(-1, self.group_size)
-            
+        
+        if self.rts > 0:
+            # print("rts", self.rts)
+            x = rts_scale(x, scale, self.rts)
+
         x_int = round_ste(x.float() / scale).half()    # avoid overflow
         
         if round_zero_point is not None:
