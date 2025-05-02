@@ -15,3 +15,24 @@
 [2025-05-02 20:08:16 root] (duquant.py 170): INFO === Start quantize layer 11 ===
 [2025-05-02 20:08:19 root] (duquant.py 170): INFO === Start quantize layer 12 ===
 [2025-05-02 20:08:21 root] (duquant.py 170): INFO === Start quantize layer 13 ===
+[2025-05-02 20:08:23 root] (duquant.py 170): INFO === Start quantize layer 14 ===
+[2025-05-02 20:08:26 root] (duquant.py 170): INFO === Start quantize layer 15 ===
+[2025-05-02 20:08:28 root] (duquant.py 170): INFO === Start quantize layer 16 ===
+[2025-05-02 20:08:31 root] (duquant.py 170): INFO === Start quantize layer 17 ===
+[2025-05-02 20:08:33 root] (duquant.py 170): INFO === Start quantize layer 18 ===
+[2025-05-02 20:08:36 root] (duquant.py 170): INFO === Start quantize layer 19 ===
+[2025-05-02 20:08:38 root] (duquant.py 170): INFO === Start quantize layer 20 ===
+[2025-05-02 20:08:41 root] (duquant.py 170): INFO === Start quantize layer 21 ===
+[2025-05-02 20:08:43 root] (duquant.py 170): INFO === Start quantize layer 22 ===
+[2025-05-02 20:08:46 root] (duquant.py 170): INFO === Start quantize layer 23 ===
+[2025-05-02 20:08:48 root] (duquant.py 170): INFO === Start quantize layer 24 ===
+[2025-05-02 20:08:51 root] (duquant.py 170): INFO === Start quantize layer 25 ===
+[2025-05-02 20:08:53 root] (duquant.py 170): INFO === Start quantize layer 26 ===
+[2025-05-02 20:08:56 root] (duquant.py 170): INFO === Start quantize layer 27 ===
+[2025-05-02 20:08:58 root] (duquant.py 170): INFO === Start quantize layer 28 ===
+[2025-05-02 20:09:01 root] (duquant.py 170): INFO === Start quantize layer 29 ===
+[2025-05-02 20:09:03 root] (duquant.py 170): INFO === Start quantize layer 30 ===
+[2025-05-02 20:09:06 root] (duquant.py 170): INFO === Start quantize layer 31 ===
+[2025-05-02 20:09:09 root] (main.py 457): INFO 113.21200942993164
+[2025-05-02 20:14:03 root] (main.py 140): INFO wikitext2 : 649.1038208007812
+[2025-05-02 20:22:50 root] (main.py 140): INFO c4 : 497.4464416503906
