@@ -11,3 +11,6 @@
 [2025-05-02 20:08:06 root] (duquant.py 170): INFO === Start quantize layer 7 ===
 [2025-05-02 20:08:08 root] (duquant.py 170): INFO === Start quantize layer 8 ===
 [2025-05-02 20:08:11 root] (duquant.py 170): INFO === Start quantize layer 9 ===
+[2025-05-02 20:08:14 root] (duquant.py 170): INFO === Start quantize layer 10 ===
+[2025-05-02 20:08:16 root] (duquant.py 170): INFO === Start quantize layer 11 ===
+[2025-05-02 20:08:19 root] (duquant.py 170): INFO === Start quantize layer 12 ===
