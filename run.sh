@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash hello
 
 CUDA_VISIBLE_DEVICES=0 python main.py \
     --block_size 128 \
