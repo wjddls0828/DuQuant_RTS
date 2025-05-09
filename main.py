@@ -398,14 +398,14 @@ def main():
         "dynamic_method": args.a_dynamic_method,
         "quant_method": args.quant_method,
         "block_size": args.block_size,
-        "rts": 0.0,
+        "rts": args.rts,
     }
     args.v_quant_params = {
         "n_bits": args.abits,
         "per_channel_axes": [],
         "symmetric": False,
         "dynamic_method": args.a_dynamic_method,
-        "rts": 0.0,
+        "rts": args.rts,
     }
     args.p_quant_params = {
         "n_bits": 16,
