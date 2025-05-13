@@ -4,10 +4,6 @@ import torch.nn.functional as F
 from quantize.quantizer import UniformAffineQuantizer
 import time
 
-
-
-
-
 class QuantLinear(nn.Module):
     """
     Quantized Module that can perform quantized convolution or normal convolution.
@@ -46,9 +42,16 @@ class QuantLinear(nn.Module):
         self.init_duquant_params = torch.tensor(0) if weight_quant_params['quant_method'] == 'duquant' else torch.tensor(1)
 
 
-    def forward(self, input: torch.Tensor):
+    def forward(self, input: torch.Tensor, o_proj_yes=False):
+        # print("input", input)
         if self.use_act_quant and not self.disable_input_quant:
+            xlen=torch.norm(input, p=2, dim=-1, keepdim=True)
+            # print("xlen", xlen)
             input = self.act_quantizer(input)
+            # print("input", input)
+            xqlen=torch.norm(input, p=2, dim=-1, keepdim=True).unsqueeze(0)
+            # print("xqlen", xqlen)
+
         if self.use_temporary_parameter:
             weight = self.temp_weight
             bias = self.temp_bias
@@ -62,6 +65,11 @@ class QuantLinear(nn.Module):
             weight = self.weight
             bias = self.bias
         out = self.fwd_func(input, weight, bias, **self.fwd_kwargs)
+        a = xqlen/xlen
+        # print("a", a)
+        if not o_proj_yes:
+            a = a.squeeze(0)
+            out/=a
 
         return out
 

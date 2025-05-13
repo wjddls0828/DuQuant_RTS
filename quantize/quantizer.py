@@ -143,11 +143,15 @@ class UniformAffineQuantizer(nn.Module):
         self.qmax = 2 ** (n_bits) - 1
 
     def fake_quant(self, x, scale, round_zero_point):
+        # print("fake quant")
+        # print("x", x)
         if self.deficiency > 0:
+            # print("self.deficiency", self.deficiency)
             pad_zeros = torch.zeros((x.shape[0],self.deficiency),dtype=x.dtype,device=x.device)
             x = torch.cat((x,pad_zeros),dim=1)
         
         if self.group_size:
+            # print("self.group_size", self.group_size)
             assert len(x.shape)==2, "only support linear layer now"
             dim1, dim2 = x.shape
             x = x.reshape(-1, self.group_size)
@@ -386,6 +390,7 @@ class UniformAffineQuantizer(nn.Module):
             x = self.init_duquant(x)
 
         if return_no_quant:
+            print("return_no_quant")
             reduce_shape = [-1]
             xmin = x.amin(reduce_shape, keepdim=True)
             xmax =  x.amax(reduce_shape, keepdim=True)

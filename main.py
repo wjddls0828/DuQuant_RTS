@@ -39,6 +39,7 @@ net_choices = [
 def evaluate(lm, args, logger):
     results = {}
     if args.multigpu:
+        print("multigpu")
         map_layers_to_multi_gpus(lm.model.model.layers)
         input_device = lm.model.model.layers[0].device
         output_device = lm.model.model.layers[-1].device
@@ -352,8 +353,6 @@ def main():
     for param in lm.model.parameters():
         param.requires_grad = False
 
-    
-
     args.weight_quant_params = {
         "n_bits": args.wbits,
         "per_channel_axes": [0],
@@ -455,6 +454,7 @@ def main():
             logger,
         )
         logger.info(time.time() - tick)
+        print("end quantization")
     evaluate(lm, args,logger)
 
 

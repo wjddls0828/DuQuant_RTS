@@ -113,6 +113,7 @@ def duquant(
 
     with torch.no_grad():
         for batch in dataloader:
+            # print("batch", batch)
             if cache["i"] >= args.nsamples:
                 break
             try:
@@ -237,7 +238,8 @@ def duquant(
                 norm_list = []
                 
                 print(qlayer.qkt_smooth_scale)
-                for j in range(args.nsamples//args.batch_size):  
+                for j in range(args.nsamples//args.batch_size): 
+                    print("quant_inps",quant_inps) 
                     index = j * args.batch_size
                     # obtain output of quantization model
                     with traincast():

@@ -41,9 +41,12 @@ class QuantLlamaMLP(nn.Module):
     def forward(self, x):
         if not self.init_duquant_params:
             self.init_duquant_params = torch.tensor(1)
+            # print("gate_proj")
             act = self.act_fn(self.gate_proj(x))
+            # print("up_proj")
             self.up_proj.copy_quantizers_duquant_params(self.gate_proj)
             mul = act * self.up_proj(x)
+            # print("down_proj")
             return self.down_proj(mul)
         return self.down_proj(self.act_fn(self.gate_proj(x)) * self.up_proj(x))
 
@@ -88,7 +91,9 @@ class QuantLlamaAttention(nn.Module):
             args.q_act_quant_params,
         )
         self.o_proj = QuantLinear(
-            org_module.o_proj, args.o_weight_quant_params, args.o_act_quant_params
+            org_module.o_proj, 
+            args.o_weight_quant_params, 
+            args.o_act_quant_params
         )
         self.qkt_matmul = QuantMatMul(
             args.q_quant_params, args.k_quant_params, matmul_func=torch.matmul, rotate=None
@@ -118,9 +123,17 @@ class QuantLlamaAttention(nn.Module):
         query_states = self.q_proj(hidden_states).view(bsz, q_len, self.num_heads, self.head_dim).transpose(1, 2)
         if not self.init_duquant_params:
             self.k_proj.copy_quantizers_duquant_params(self.q_proj)
+        # print("key_states hidden_states", hidden_states)
+        #import pickle
+        #with open('key_states_hiddens_states.pkl', 'wb') as f:
+        #    pickle.dump(hidden_states, f)
         key_states =self.k_proj(hidden_states).view(bsz, q_len, self.num_key_value_heads, self.head_dim).transpose(1, 2)
         if not self.init_duquant_params:
             self.v_proj.copy_quantizers_duquant_params(self.q_proj)
+        # print("value_states hidden_states", hidden_states)
+
+        # with open('value_states_hiddens_states.pkl', 'wb') as f:
+        #     pickle.dump(hidden_states, f)
         value_states = self.v_proj(hidden_states).view(bsz, q_len, self.num_key_value_heads, self.head_dim).transpose(1, 2)
 
         kv_seq_len = key_states.shape[-2]
@@ -129,8 +142,10 @@ class QuantLlamaAttention(nn.Module):
         cos, sin = self.rotary_emb(value_states, seq_len=kv_seq_len)
         query_states, key_states = apply_rotary_pos_emb(query_states, key_states, cos, sin, position_ids)
 
+        x1len= torch.norm(query_states, p=2, dim=-1, keepdim=True)
         query_states = self.qkt_matmul.quant_x1(query_states)
-        key_states = self.qkt_matmul.quant_x2(key_states)
+        x1qlen= torch.norm(query_states, p=2, dim=-1, keepdim=True)
+        a1 = x1qlen/x1len
 
         # [bsz, nh, t, hd]
     
@@ -145,8 +160,15 @@ class QuantLlamaAttention(nn.Module):
         key_states = repeat_kv(key_states, self.num_key_value_groups)
         value_states = repeat_kv(value_states, self.num_key_value_groups)
         
+        x2len= torch.norm(key_states, p=2, dim=-1, keepdim=True)
+        key_states = self.qkt_matmul.quant_x2(key_states)
+        x2qlen= torch.norm(key_states, p=2, dim=-1, keepdim=True)
+        a2=x2qlen/x2len
+        a2=a2.transpose(2,3)
+        
         attn_weights = self.qkt_matmul(query_states, key_states.transpose(2, 3)) / math.sqrt(self.head_dim)
-
+        attn_weights /= a1 
+        attn_weights /= a2 
 
         if attn_weights.size() != (bsz, self.num_heads, q_len, kv_seq_len):
             raise ValueError(
@@ -165,8 +187,14 @@ class QuantLlamaAttention(nn.Module):
         # upcast attention to fp32
         attn_weights = nn.functional.softmax(attn_weights, dim=-1, dtype=torch.float32).to(query_states.dtype)
         attn_weights = self.pv_matmul.quant_x1(attn_weights)
+
+        x2len= torch.norm(value_states, p=2, dim=-1, keepdim=True)
         value_states = self.pv_matmul.quant_x2(value_states)
+        x2qlen= torch.norm(value_states, p=2, dim=-1, keepdim=True)
+        a2=x2qlen/x2len
+        
         attn_output = self.pv_matmul(attn_weights, value_states)
+        attn_output/=a2
 
         if attn_output.size() != (bsz, self.num_heads, q_len, self.head_dim):
             raise ValueError(
@@ -174,10 +202,19 @@ class QuantLlamaAttention(nn.Module):
                 f" {attn_output.size()}"
             )
 
+        # print("1. attn_output.shape", attn_output.shape)
         attn_output = attn_output.transpose(1, 2)
+        # print("2. attn_output.shape", attn_output.shape)
+        # print("q_len", q_len)
         attn_output = attn_output.reshape(bsz, q_len, self.hidden_size)
+        # print("3. attn_output.shape", attn_output.shape)
+        # print("o_proj")
 
-        attn_output = self.o_proj(attn_output)
+        # print("attn_output", attn_output)
+        # with open('o_proj_attn_output.pkl', 'wb') as f:
+        #     pickle.dump(attn_output, f)
+        attn_output = self.o_proj(attn_output, o_proj_yes=True)
+        # print("4. attn_output.shape", attn_output.shape)
 
         if not output_attentions:
             attn_weights = None
